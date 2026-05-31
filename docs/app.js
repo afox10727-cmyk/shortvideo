@@ -485,4 +485,3 @@ document.addEventListener('DOMContentLoaded', () => {
     navigate('auth');
   }
 });
-</script>
