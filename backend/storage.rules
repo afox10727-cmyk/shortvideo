@@ -1,0 +1,41 @@
+rules_version = '2';
+service firebase.storage {
+
+  function isAuth() { return request.auth != null; }
+  function myUid() { return request.auth.uid; }
+
+  match /b/{bucket}/o {
+
+    // ── Raw video uploads (user's own) ──
+    match /videos/raw/{userId}/{videoId}.mp4 {
+      allow read: if isAuth() && userId == myUid();
+      allow create, update: if isAuth()
+        && userId == myUid()
+        && request.resource.size < 500 * 1024 * 1024  // 500MB max
+        && request.resource.contentType.matches('video/.*');
+    }
+
+    // ── Processed videos (authenticated users) ──
+    match /videos/processed/{videoId}/{file} {
+      allow read: if isAuth();
+      allow write: if false;  // Only Cloud Functions writes
+    }
+
+    // ── Thumbnails (authenticated users) ──
+    match /thumbnails/{videoId}.jpg {
+      allow read: if isAuth();
+      allow write: if isAuth()
+        && request.resource.size < 10 * 1024 * 1024  // 10MB max
+        && request.resource.contentType.matches('image/.*');
+    }
+
+    // ── Avatars ──
+    match /avatars/{userId}.jpg {
+      allow read: if isAuth();
+      allow create, update: if isAuth()
+        && userId == myUid()
+        && request.resource.size < 5 * 1024 * 1024   // 5MB max
+        && request.resource.contentType.matches('image/.*');
+    }
+  }
+}

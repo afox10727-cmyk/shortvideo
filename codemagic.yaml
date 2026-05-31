@@ -1,0 +1,52 @@
+# Codemagic CI/CD configuration for ShortVideo iOS app
+# Docs: https://docs.codemagic.io/yaml/yaml/
+
+workflows:
+  ios-build:
+    name: ShortVideo iOS Build
+    max_build_duration: 60
+    environment:
+      xcode: 16.0
+      cocoapods: default
+      vars:
+        BUNDLE_ID: "com.shortvideo.app"
+        XCODE_PROJECT: "ios/DouyinClone.xcodeproj"
+        XCODE_SCHEME: "DouyinClone"
+    scripts:
+      - name: Set up Firebase config
+        script: |
+          # GoogleService-Info.plist should be stored as a secure environment variable
+          # in Codemagic: base64 encode your plist and add as GOOGLE_SERVICE_PLIST
+          if [ -n "$GOOGLE_SERVICE_PLIST" ]; then
+            echo "$GOOGLE_SERVICE_PLIST" | base64 --decode > ios/DouyinClone/DouyinClone/Resources/GoogleService-Info.plist
+          fi
+      - name: Set up provisioning
+        script: |
+          # Codemagic handles this automatically when you connect your Apple Developer account
+          xcode-project use-profiles
+      - name: Build ipa
+        script: |
+          xcodebuild build \
+            -project "$XCODE_PROJECT" \
+            -scheme "$XCODE_SCHEME" \
+            -sdk iphoneos \
+            -configuration Release \
+            -archivePath "$PWD/build/ShortVideo.xcarchive" \
+            archive
+      - name: Export ipa
+        script: |
+          xcodebuild -exportArchive \
+            -archivePath "$PWD/build/ShortVideo.xcarchive" \
+            -exportOptionsPlist "$CM_EXPORT_OPTIONS" \
+            -exportPath "$PWD/build/export"
+    artifacts:
+      - build/export/*.ipa
+    publishing:
+      app_store_connect:
+        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
+        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
+        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
+        submit_to_testflight: true
+      email:
+        recipients:
+          - $NOTIFY_EMAIL

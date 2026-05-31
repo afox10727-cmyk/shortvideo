@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Xcode
+*.xcuserdata
+DerivedData/
+*.xccheckout
+*.xcworkspace/xcuserdata/
+
+# Firebase
+GoogleService-Info.plist
+backend/functions/lib/
+backend/functions/node_modules/
+
+# Secrets
+.env
+*.key
+
+# iOS
+*.ipa
+*.dSYM.zip
+*.dSYM
